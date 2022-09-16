@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  python3.9
+
+  Sample SAM Template for garmin-importer
+
+Globals:
+  Function:
+    Timeout: 60
+
+Resources:
+  GarminImporterFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      PackageType: Image
+      Architectures:
+        - x86_64
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref GarminCredentials
+        - DynamoDBCrudPolicy:
+            TableName: !Ref GarminActivitiesTable
+        - S3WritePolicy:
+            BucketName: !Ref GarminActivitiesBucket
+      Events:
+        GarminImporter:
+          Type: Schedule
+          Properties:
+            Schedule: rate(10 minutes)
+            Name: garmin-importer-schedule
+            Description: Schedule by which the garmin-importer runs
+            Enabled: False
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: ./garmin_importer
+      DockerTag: python3.9-v1
+
+  GarminCredentials:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+        Name: garmin-importer/garmin-credentials
+
+  GarminActivitiesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: garmin-activities-table
+      AttributeDefinitions:
+        - AttributeName: ActivityTs
+          AttributeType: N
+      KeySchema:
+        - AttributeName: ActivityTs
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  GarminActivitiesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: garmin-importer-activities
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: TRUE
+        BlockPublicPolicy: TRUE
+        IgnorePublicAcls: TRUE
+        RestrictPublicBuckets: TRUE
+
+Outputs:
+  GarminImporterFunction:
+    Description: "Garmin Importer Lambda Function ARN"
+    Value: !GetAtt GarminImporterFunction.Arn
+  GarminImporterFunctionIamRole:
+    Description: "Implicit IAM Role created for Garmin Importer function"
+    Value: !GetAtt GarminImporterFunctionRole.Arn
