@@ -1,4 +1,6 @@
 from failure_modes import GarminImportFailure
+from aws_utils import check_if_activity_already_persisted
+
 from garminconnect import (
     Garmin,
     GarminConnectConnectionError,
@@ -7,14 +9,21 @@ from garminconnect import (
 )
 
 from datetime import date, timedelta
+from dataclasses import dataclass
 import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def gc_authenticate(username: str, password: str) -> Garmin:
-    api = Garmin(username, password)
+@dataclass
+class UserCredentials:
+    username: str
+    password: str
+
+
+def gc_authenticate(credentials: UserCredentials) -> Garmin:
+    api = Garmin(credentials.username, credentials.password)
     try:
         logger.debug("authenticating to GC")
         api.login()
@@ -48,6 +57,30 @@ def check_for_new_activities(api: Garmin, since_date: date = date(year=2016, mon
 
     cleaned_gcas = _clean_activities_through_model(gcas)
     return cleaned_gcas
+
+
+def persist_new_activities(api: Garmin, activities: list):
+    pass
+
+
+def _persist_activity(api: Garmin, activity_id: str, activity_ts: str):
+    # Checks if activity is already in dynamo.
+    # If not, it retrieves GPX and FIT files from Garmin Connect and saves them to s3.
+    # Finally, it stores activity data in dynamodb so that the next scan will skip it.
+    if not check_if_activity_already_persisted(activity_ts):
+        logger.debug(f"Activity {activity_ts} not persisted yet. Proceeding")
+        # get activity files in zip and gpx format
+        activity_zip_buffer = api.download_activity(activity_id, Garmin.ActivityDownloadFormat.ORIGINAL)
+        activity_gpx_buffer = api.download_activity(activity_id, Garmin.ActivityDownloadFormat.GPX)
+
+        # persist them to s3
+
+
+        # write activity details to dynamo
+
+
+def _get_activity_files():
+    pass
 
 
 def _retrieve_activities_from_gc_since_last(api: Garmin, last_activity_date: date) -> list:

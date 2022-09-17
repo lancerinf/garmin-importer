@@ -27,7 +27,7 @@ Resources:
         GarminImporter:
           Type: Schedule
           Properties:
-            Schedule: rate(10 minutes)
+            Schedule: rate(1 day)
             Name: garmin-importer-schedule
             Description: Schedule by which the garmin-importer runs
             Enabled: False
@@ -46,11 +46,15 @@ Resources:
     Properties:
       TableName: garmin-activities-table
       AttributeDefinitions:
+        - AttributeName: Username
+          AttributeType: S
         - AttributeName: ActivityTs
           AttributeType: N
       KeySchema:
-        - AttributeName: ActivityTs
+        - AttributeName: Username
           KeyType: HASH
+        - AttributeName: ActivityTs
+          KeyType: RANGE
       BillingMode: PAY_PER_REQUEST
 
   GarminActivitiesBucket:
