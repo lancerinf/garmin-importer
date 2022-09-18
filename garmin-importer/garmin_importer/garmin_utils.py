@@ -1,5 +1,6 @@
-from failure_modes import GarminImportFailure
-from aws_utils import check_if_activity_already_persisted
+from failure_modes import GarminImportFailure, InvalidActivity
+from aws_utils import activity_already_persisted, persist_in_s3, insert_activity_in_dynamo
+from garmin_models import UserCredentials
 
 from garminconnect import (
     Garmin,
@@ -9,17 +10,10 @@ from garminconnect import (
 )
 
 from datetime import date, timedelta
-from dataclasses import dataclass
 import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-
-
-@dataclass
-class UserCredentials:
-    username: str
-    password: str
 
 
 def gc_authenticate(credentials: UserCredentials) -> Garmin:
@@ -37,7 +31,7 @@ def gc_authenticate(credentials: UserCredentials) -> Garmin:
     return api
 
 
-def check_for_new_activities(api: Garmin, since_date: date = date(year=2016, month=1, day=1)) -> list:
+def check_for_new_activities(api: Garmin, since_date: date) -> list:
     # Tries retrieving 1 month worth of activities since specified date.
     # If nothing is found, iterates until some activity is found. Retries until current day.
     gcas = []
@@ -59,28 +53,30 @@ def check_for_new_activities(api: Garmin, since_date: date = date(year=2016, mon
     return cleaned_gcas
 
 
-def persist_new_activities(api: Garmin, activities: list):
-    pass
+def persist_new_activities(api: Garmin, credentials: UserCredentials, activities: list):
+    for activity in activities:
+        if not _valid_activity(activity):
+            logger.error('Activity cannot be persisted because it lacks either beginTimestamp or activityId')
+            raise InvalidActivity(f'This activity cannot be persisted: {activity}')
+        if not activity_already_persisted(activity.get("beginTimestamp")):
+            _persist_activity(api, credentials.username, activity)
 
 
-def _persist_activity(api: Garmin, activity_id: str, activity_ts: str):
-    # Checks if activity is already in dynamo.
-    # If not, it retrieves GPX and FIT files from Garmin Connect and saves them to s3.
+def _persist_activity(api: Garmin, username: str, activity: dict):
+    # Retrieves GPX and FIT files from Garmin Connect and saves them to s3.
     # Finally, it stores activity data in dynamodb so that the next scan will skip it.
-    if not check_if_activity_already_persisted(activity_ts):
-        logger.debug(f"Activity {activity_ts} not persisted yet. Proceeding")
-        # get activity files in zip and gpx format
-        activity_zip_buffer = api.download_activity(activity_id, Garmin.ActivityDownloadFormat.ORIGINAL)
-        activity_gpx_buffer = api.download_activity(activity_id, Garmin.ActivityDownloadFormat.GPX)
+    logger.debug(f'Activity {activity.get("beginTimestamp")} not persisted yet. Proceeding')
+    # get activity files in zip and gpx format
+    zip_buffer = api.download_activity(activity.get("activityId"), Garmin.ActivityDownloadFormat.ORIGINAL)
+    gpx_buffer = api.download_activity(activity.get("activityId"), Garmin.ActivityDownloadFormat.GPX)
 
-        # persist them to s3
+    # persist them to s3
+    zip_upload_success = persist_in_s3(f'{activity.get("beginTimestamp")}/{activity.get("activityId")}.zip', zip_buffer)
+    gpx_upload_success = persist_in_s3(f'{activity.get("beginTimestamp")}/{activity.get("activityId")}.gpx', gpx_buffer)
 
-
-        # write activity details to dynamo
-
-
-def _get_activity_files():
-    pass
+    # write activity details to dynamo
+    if zip_upload_success and gpx_upload_success:
+        insert_activity_in_dynamo(username, activity)
 
 
 def _retrieve_activities_from_gc_since_last(api: Garmin, last_activity_date: date) -> list:
@@ -115,7 +111,12 @@ def _clean_activity(activity: dict) -> dict:
     return cleaned_activity
 
 
+def _valid_activity(activity: dict) -> bool:
+    return activity.get("beginTimestamp") and activity.get('activityId')
+
+
 activity_model: dict[str] = {
+    "beginTimestamp": None,
     "activityId": None,
     "startTimeLocal": None,
     "activityType": {
@@ -149,7 +150,6 @@ activity_model: dict[str] = {
     "poolLength": None,
     "unitOfPoolLength": None,
     "timeZoneId": None,
-    "beginTimestamp": None,
     "sportTypeId": None,
     "avgPower": None,
     "maxPower": None,
