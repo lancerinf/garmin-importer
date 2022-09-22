@@ -13,7 +13,6 @@ from datetime import date, timedelta
 import logging
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 def gc_authenticate(credentials: UserCredentials) -> Garmin:
@@ -49,11 +48,10 @@ def check_for_new_activities(api: Garmin, since_date: date) -> list:
     except GarminConnectAuthenticationError as gae:
         raise GarminImportFailure("garmin importer failed authenticating with garmin connect") from gae
 
-    cleaned_gcas = _clean_activities_through_model(gcas)
-    return cleaned_gcas
+    return _clean_activities_through_model(gcas)
 
 
-def persist_new_activities(api: Garmin, credentials: UserCredentials, activities: list):
+def persist_new_activities(api: Garmin, credentials: UserCredentials, activities: list[dict]):
     for activity in activities:
         if not _valid_activity(activity):
             logger.error('Activity cannot be persisted because it lacks either beginTimestamp or activityId')
@@ -85,8 +83,7 @@ def _retrieve_activities_from_gc_since_last(api: Garmin, last_activity_date: dat
     if date.today() < month_after_last:
         month_after_last = date.today()
 
-    activities = api.get_activities_by_date(last_activity_date, month_after_last)
-    return activities
+    return api.get_activities_by_date(last_activity_date, month_after_last)
 
 
 def _clean_activities_through_model(activities: list) -> list:
@@ -112,7 +109,7 @@ def _clean_activity(activity: dict) -> dict:
 
 
 def _valid_activity(activity: dict) -> bool:
-    return activity.get("beginTimestamp") and activity.get('activityId')
+    return bool(activity.get("beginTimestamp")) and bool(activity.get('activityId'))
 
 
 activity_model: dict[str] = {
