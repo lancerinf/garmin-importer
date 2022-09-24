@@ -19,7 +19,7 @@ def lambda_handler(event, context):
     output['message'] = f"processing {len(new_activities)} new activities!"
 
     persisted_activities = persist_new_activities(garmin, credentials, new_activities)
-    if len(persisted_activities) is not 0:
+    if persisted_activities:
         output['persisted_activities'] = persisted_activities
 
     return output
