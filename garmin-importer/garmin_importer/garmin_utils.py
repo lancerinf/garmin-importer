@@ -2,9 +2,7 @@ from failure_modes import InvalidActivity
 from aws_utils import activity_already_persisted, persist_in_s3, insert_activity_in_dynamo
 from garmin_models import UserCredentials
 
-from garminconnect import (
-    Garmin
-)
+from garminconnect import Garmin
 
 from datetime import date, timedelta
 import logging
