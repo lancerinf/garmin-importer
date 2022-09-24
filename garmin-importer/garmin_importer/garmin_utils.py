@@ -1,12 +1,9 @@
-from failure_modes import GarminImportFailure, InvalidActivity
+from failure_modes import InvalidActivity
 from aws_utils import activity_already_persisted, persist_in_s3, insert_activity_in_dynamo
 from garmin_models import UserCredentials
 
 from garminconnect import (
-    Garmin,
-    GarminConnectConnectionError,
-    GarminConnectTooManyRequestsError,
-    GarminConnectAuthenticationError,
+    Garmin
 )
 
 from datetime import date, timedelta
@@ -17,15 +14,10 @@ logger = logging.getLogger(__name__)
 
 def gc_authenticate(credentials: UserCredentials) -> Garmin:
     api = Garmin(credentials.username, credentials.password)
-    try:
-        logger.debug("authenticating to GC")
-        api.login()
-        logger.debug("authentication successful")
 
-    except GarminConnectConnectionError as gcce:
-        raise GarminImportFailure("garmin importer failed connecting to garmin connect") from gcce
-    except GarminConnectAuthenticationError as gae:
-        raise GarminImportFailure("garmin importer failed authenticating with garmin connect") from gae
+    logger.debug("authenticating to GC")
+    api.login()
+    logger.debug("authentication successful")
 
     return api
 
@@ -34,47 +26,44 @@ def check_for_new_activities(api: Garmin, since_date: date) -> list:
     # Tries retrieving 1 month worth of activities since specified date.
     # If nothing is found, iterates until some activity is found. Retries until current day.
     gcas = []
-    try:
-        while len(gcas) == 0 or since_date > date.today():
-            logger.debug(f"loading 1 month of activities since {since_date}")
-            gcas.extend(_retrieve_activities_from_gc_since_last(api, since_date))
-            since_date = since_date + timedelta(days=30)
-        logger.info(f"found {len(gcas)} activities since {since_date}")
-
-    except GarminConnectConnectionError as gcce:
-        raise GarminImportFailure("garmin importer failed connecting to garmin connect") from gcce
-    except GarminConnectTooManyRequestsError as gctmre:
-        raise GarminImportFailure("garmin importer failed with too many requests to garmin connect") from gctmre
-    except GarminConnectAuthenticationError as gae:
-        raise GarminImportFailure("garmin importer failed authenticating with garmin connect") from gae
+    while len(gcas) == 0 or since_date > date.today():
+        logger.debug(f"loading 1 month of activities since {since_date}")
+        gcas.extend(_retrieve_activities_from_gc_since_last(api, since_date))
+        since_date = since_date + timedelta(days=30)
+    logger.info(f"found {len(gcas)} activities since {since_date}")
 
     return _clean_activities_through_model(gcas)
 
 
-def persist_new_activities(api: Garmin, credentials: UserCredentials, activities: list[dict]):
+def persist_new_activities(api: Garmin, credentials: UserCredentials, activities: list[dict]) -> list[str]:
+    persisted_activities: list[str] = []
     for activity in activities:
         if not _valid_activity(activity):
             logger.error('Activity cannot be persisted because it lacks either beginTimestamp or activityId')
             raise InvalidActivity(f'This activity cannot be persisted: {activity}')
-        if not activity_already_persisted(activity.get("beginTimestamp")):
+        if not activity_already_persisted(credentials.username, activity.get("beginTimestamp")):
+            logger.info(f'Activity {activity.get("beginTimestamp")} not persisted yet. Proceeding')
             _persist_activity(api, credentials.username, activity)
+            persisted_activities.append(str(activity.get("ActivityTs")))
+    return persisted_activities
 
 
 def _persist_activity(api: Garmin, username: str, activity: dict):
-    # Retrieves GPX and FIT files from Garmin Connect and saves them to s3.
-    # Finally, it stores activity data in dynamodb so that the next scan will skip it.
-    logger.debug(f'Activity {activity.get("beginTimestamp")} not persisted yet. Proceeding')
-    # get activity files in zip and gpx format
+    # retrieves GPX and FIT files from Garmin Connect and saves them to s3.
+    logger.debug(f"retrieving zip and gpx for new activity: {activity.get('beginTimestamp')}")
     zip_buffer = api.download_activity(activity.get("activityId"), Garmin.ActivityDownloadFormat.ORIGINAL)
     gpx_buffer = api.download_activity(activity.get("activityId"), Garmin.ActivityDownloadFormat.GPX)
 
     # persist them to s3
+    logger.debug(f"persisting zip, gpx for new activity: {activity.get('beginTimestamp')}")
     zip_upload_success = persist_in_s3(f'{activity.get("beginTimestamp")}/{activity.get("activityId")}.zip', zip_buffer)
     gpx_upload_success = persist_in_s3(f'{activity.get("beginTimestamp")}/{activity.get("activityId")}.gpx', gpx_buffer)
 
     # write activity details to dynamo
     if zip_upload_success and gpx_upload_success:
+        logger.debug(f"storing dynamo entry for new activity: {activity.get('beginTimestamp')}")
         insert_activity_in_dynamo(username, activity)
+        logger.info(f"correctly stored zip, gpx and dynamo entry for new activity: {activity.get('ActivityTs')}")
 
 
 def _retrieve_activities_from_gc_since_last(api: Garmin, last_activity_date: date) -> list:

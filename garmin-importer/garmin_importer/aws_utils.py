@@ -65,7 +65,7 @@ def activity_already_persisted(username: str, activity_ts: int) -> bool:
         TableName=GARMIN_ACTIVITIES_TABLE,
         Key={
             'Username': {'S': username},
-            'ActivityTs': {'N': activity_ts}
+            'ActivityTs': {'N': str(activity_ts)}
         },
         ProjectionExpression='ActivityTs',
     )
