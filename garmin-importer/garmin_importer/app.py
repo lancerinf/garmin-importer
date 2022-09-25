@@ -1,5 +1,7 @@
 from aws_utils import retrieve_garmin_credentials, get_date_of_latest_activity
-from garmin_utils import gc_authenticate, check_for_new_activities, persist_new_activities, UserCredentials
+from garmin_utils import check_for_new_activities, persist_new_activities, get_garmin_session, save_garmin_session
+from garmin_models import UserCredentials
+from failure_modes import GarminConnectSessionException
 
 from garminconnect import Garmin
 
@@ -16,7 +18,7 @@ def lambda_handler(event, context):
     try:
         credentials: UserCredentials = retrieve_garmin_credentials()
         logger.info('Authenticating with Garmin Connect..')
-        garmin = gc_authenticate(credentials)
+        garmin = get_garmin_session(credentials)
 
         logging.info('Checking last activity persisted..')
         last_stored_activity = get_date_of_latest_activity(credentials.username)
@@ -31,13 +33,15 @@ def lambda_handler(event, context):
             logging.info(f'Persisted {len(persisted_activities)} new activities.')
             output['persisted_activities'] = str(persisted_activities)
         else:
-            logging.info(f'No new activity found.')
+            logging.info('No new activity found.')
 
-    except BaseException as e:
+        save_garmin_session(credentials, garmin)
+
+    except GarminConnectSessionException as e:
         logger.critical(e, exc_info=True)
 
-    finally:
-        logging.info(f'Logging out from Garmin Connect.')
-        garmin.logout()
+    except Exception as e:
+        logger.critical(e, exc_info=True)
+        save_garmin_session(credentials, garmin)
 
     return output
