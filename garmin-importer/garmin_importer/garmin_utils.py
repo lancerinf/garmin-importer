@@ -31,8 +31,8 @@ def check_for_new_activities(api: Garmin, since_date: date) -> list:
     return _clean_activities_through_model(gcas)
 
 
-def persist_new_activities(api: Garmin, credentials: UserCredentials, activities: list[dict]) -> list[str]:
-    persisted_activities: list[str] = []
+def persist_new_activities(api: Garmin, credentials: UserCredentials, activities: list[dict]) -> list[tuple[int, str]]:
+    persisted_activities: list[tuple[int, str]] = []
     for activity in activities:
         if not _valid_activity(activity):
             logger.error('Activity cannot be persisted because it lacks either beginTimestamp or activityId.')
@@ -40,7 +40,7 @@ def persist_new_activities(api: Garmin, credentials: UserCredentials, activities
         if not activity_already_persisted(credentials.username, activity.get("beginTimestamp")):
             logger.info(f'Activity {activity.get("beginTimestamp")} not persisted yet. Proceeding..')
             _persist_activity(api, credentials.username, activity)
-            persisted_activities.append(str(activity.get("ActivityTs")))
+            persisted_activities.append((activity.get("ActivityTs"), activity.get("startTimeLocal")))
     return persisted_activities
 
 

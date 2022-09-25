@@ -29,7 +29,7 @@ def lambda_handler(event, context):
         persisted_activities = persist_new_activities(garmin, credentials, new_activities)
         if persisted_activities:
             logging.info(f'Persisted {len(persisted_activities)} new activities.')
-            output['persisted_activities'] = persisted_activities
+            output['persisted_activities'] = str(persisted_activities)
         else:
             logging.info(f'No new activity found.')
 
