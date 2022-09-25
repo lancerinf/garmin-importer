@@ -18,8 +18,13 @@ Resources:
       Architectures:
         - x86_64
       Policies:
-        - AWSSecretsManagerGetSecretValuePolicy:
-            SecretArn: !Ref GarminCredentials
+        - Statement:
+            - Sid: SMSecretRUPolicy
+              Effect: Allow
+              Action:
+              - secretsmanager:UpdateSecret
+              - secretsmanager:GetSecretValue
+              Resource: !Ref GarminCredentials
         - DynamoDBCrudPolicy:
             TableName: !Ref GarminActivitiesTable
         - S3WritePolicy:
