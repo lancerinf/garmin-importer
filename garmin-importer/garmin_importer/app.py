@@ -5,8 +5,8 @@ from garminconnect import Garmin
 
 import logging
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 def lambda_handler(event, context):
@@ -15,22 +15,29 @@ def lambda_handler(event, context):
 
     try:
         credentials: UserCredentials = retrieve_garmin_credentials()
+        logger.info('Authenticating with Garmin Connect..')
         garmin = gc_authenticate(credentials)
 
+        logging.info('Checking last activity persisted..')
         last_stored_activity = get_date_of_latest_activity(credentials.username)
         output['last_activity'] = str(last_stored_activity)
 
+        logging.info(f'Looking for new activities since: {str(last_stored_activity)}')
         new_activities = check_for_new_activities(garmin, last_stored_activity)
-        output['message'] = f"processing {len(new_activities)} new activities!"
 
+        logging.info(f'Found {len(new_activities)} activities since last. Processing..')
         persisted_activities = persist_new_activities(garmin, credentials, new_activities)
         if persisted_activities:
+            logging.info(f'Persisted {len(persisted_activities)} new activities.')
             output['persisted_activities'] = persisted_activities
+        else:
+            logging.info(f'No new activity found.')
 
     except BaseException as e:
         logger.critical(e, exc_info=True)
 
     finally:
+        logging.info(f'Logging out from Garmin Connect.')
         garmin.logout()
 
     return output

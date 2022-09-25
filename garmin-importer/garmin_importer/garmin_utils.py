@@ -13,9 +13,8 @@ logger = logging.getLogger(__name__)
 def gc_authenticate(credentials: UserCredentials) -> Garmin:
     api = Garmin(credentials.username, credentials.password)
 
-    logger.debug("authenticating to GC")
     api.login()
-    logger.debug("authentication successful")
+    logger.debug("Authentication successful.")
 
     return api
 
@@ -25,10 +24,9 @@ def check_for_new_activities(api: Garmin, since_date: date) -> list:
     # If nothing is found, iterates until some activity is found. Retries until current day.
     gcas = []
     while len(gcas) == 0 or since_date > date.today():
-        logger.debug(f"loading 1 month of activities since {since_date}")
+        logger.debug(f"Loading 1 month of activities since {since_date}")
         gcas.extend(_retrieve_activities_from_gc_since_last(api, since_date))
         since_date = since_date + timedelta(days=30)
-    logger.info(f"found {len(gcas)} activities since {since_date}")
 
     return _clean_activities_through_model(gcas)
 
@@ -37,10 +35,10 @@ def persist_new_activities(api: Garmin, credentials: UserCredentials, activities
     persisted_activities: list[str] = []
     for activity in activities:
         if not _valid_activity(activity):
-            logger.error('Activity cannot be persisted because it lacks either beginTimestamp or activityId')
+            logger.error('Activity cannot be persisted because it lacks either beginTimestamp or activityId.')
             raise InvalidActivity(f'This activity cannot be persisted: {activity}')
         if not activity_already_persisted(credentials.username, activity.get("beginTimestamp")):
-            logger.info(f'Activity {activity.get("beginTimestamp")} not persisted yet. Proceeding')
+            logger.info(f'Activity {activity.get("beginTimestamp")} not persisted yet. Proceeding..')
             _persist_activity(api, credentials.username, activity)
             persisted_activities.append(str(activity.get("ActivityTs")))
     return persisted_activities
@@ -48,20 +46,20 @@ def persist_new_activities(api: Garmin, credentials: UserCredentials, activities
 
 def _persist_activity(api: Garmin, username: str, activity: dict):
     # retrieves GPX and FIT files from Garmin Connect and saves them to s3.
-    logger.debug(f"retrieving zip and gpx for new activity: {activity.get('beginTimestamp')}")
+    logger.debug(f"Retrieving zip and gpx for activity: {activity.get('beginTimestamp')}")
     zip_buffer = api.download_activity(activity.get("activityId"), Garmin.ActivityDownloadFormat.ORIGINAL)
     gpx_buffer = api.download_activity(activity.get("activityId"), Garmin.ActivityDownloadFormat.GPX)
 
     # persist them to s3
-    logger.debug(f"persisting zip, gpx for new activity: {activity.get('beginTimestamp')}")
+    logger.debug(f"Persisting zip, gpx for activity: {activity.get('beginTimestamp')}")
     zip_upload_success = persist_in_s3(f'{activity.get("beginTimestamp")}/{activity.get("activityId")}.zip', zip_buffer)
     gpx_upload_success = persist_in_s3(f'{activity.get("beginTimestamp")}/{activity.get("activityId")}.gpx', gpx_buffer)
 
     # write activity details to dynamo
     if zip_upload_success and gpx_upload_success:
-        logger.debug(f"storing dynamo entry for new activity: {activity.get('beginTimestamp')}")
+        logger.debug(f"Storing dynamo entry for activity: {activity.get('beginTimestamp')}")
         insert_activity_in_dynamo(username, activity)
-        logger.info(f"correctly stored zip, gpx and dynamo entry for new activity: {activity.get('ActivityTs')}")
+        logger.info(f"Correctly stored zip, gpx and dynamo entry for new activity: {activity.get('ActivityTs')}")
 
 
 def _retrieve_activities_from_gc_since_last(api: Garmin, last_activity_date: date) -> list:
