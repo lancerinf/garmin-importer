@@ -1,22 +1,37 @@
-from failure_modes import InvalidActivity
-from aws_utils import activity_already_persisted, persist_in_s3, insert_activity_in_dynamo
+from failure_modes import InvalidActivity, GarminConnectSessionException
+from aws_utils import activity_already_persisted, persist_in_s3, insert_activity_in_dynamo, save_session_in_secret_store
 from garmin_models import UserCredentials
 
 from garminconnect import Garmin
 
 from datetime import date, timedelta
+import json
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-def gc_authenticate(credentials: UserCredentials) -> Garmin:
-    api = Garmin(credentials.username, credentials.password)
+def get_garmin_session(credentials: UserCredentials) -> Garmin:
+    api: Garmin
+    if credentials.session:
+        api = Garmin(credentials.username, credentials.password, session_data=credentials.session)
+    else:
+        api = Garmin(credentials.username, credentials.password)
 
-    api.login()
-    logger.debug("Authentication successful.")
+    try:
+        api.login()
+    except Exception as e:
+        logger.info('Trouble establishing/renewing a valid session with Garmin Connect.')
+        raise GarminConnectSessionException('Trouble establishing/renewing a valid session with Garmin Connect.') from e
 
     return api
+
+
+def save_garmin_session(credentials: UserCredentials, api: Garmin):
+    session_to_save = api.session_data
+    text_to_save = json.dumps(session_to_save)
+
+    save_session_in_secret_store(credentials, text_to_save)
 
 
 def check_for_new_activities(api: Garmin, since_date: date) -> list:

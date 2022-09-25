@@ -2,6 +2,10 @@ class CredentialsRetrievalFailure(Exception):
     pass
 
 
+class GarminConnectSessionException(BaseException):
+    pass
+
+
 class GarminImportFailure(Exception):
     pass
 
