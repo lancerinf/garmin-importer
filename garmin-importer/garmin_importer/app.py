@@ -18,7 +18,7 @@ def lambda_handler(event, context):
         garmin = gc_authenticate(credentials)
 
         last_stored_activity = get_date_of_latest_activity(credentials.username)
-        output['last_activity'] = last_stored_activity
+        output['last_activity'] = str(last_stored_activity)
 
         new_activities = check_for_new_activities(garmin, last_stored_activity)
         output['message'] = f"processing {len(new_activities)} new activities!"
