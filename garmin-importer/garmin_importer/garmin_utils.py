@@ -8,7 +8,30 @@ from datetime import date, timedelta
 import json
 import logging
 
+MAX_GARMIN_CONNECT_API_RETRIES = 3
+
 logger = logging.getLogger(__name__)
+
+
+def _retry_garmin_call_on_failure(gc_call, *args):
+    retries = 0
+
+    while retries < MAX_GARMIN_CONNECT_API_RETRIES:
+        try:
+            if args:
+                results = gc_call(args)
+            else:
+                results = gc_call()
+            break
+
+        except Exception as e:
+            if (retries + 1) < MAX_GARMIN_CONNECT_API_RETRIES:
+                logger.error(f"Error occurred when calling {gc_call} - Try {retries} - Retrying..")
+                retries += 1
+            else:
+                raise e
+
+    return results
 
 
 def get_garmin_session(credentials: UserCredentials) -> Garmin:
@@ -19,7 +42,7 @@ def get_garmin_session(credentials: UserCredentials) -> Garmin:
         api = Garmin(credentials.username, credentials.password)
 
     try:
-        api.login()
+        _retry_garmin_call_on_failure(api.login)
     except Exception as e:
         logger.info('Trouble establishing/renewing a valid session with Garmin Connect.')
         raise GarminConnectSessionException('Trouble establishing/renewing a valid session with Garmin Connect.') from e
