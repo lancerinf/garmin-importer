@@ -61,7 +61,7 @@ def check_for_new_activities(api: Garmin, since_date: date) -> list:
     # Tries retrieving 1 month worth of activities since specified date.
     # If nothing is found, iterates until some activity is found. Retries until current day.
     gcas = []
-    while len(gcas) == 0 or since_date > date.today():
+    while len(gcas) <= 5 or since_date > date.today():
         logger.debug(f"Loading 1 month of activities since {since_date}")
         gcas.extend(_retrieve_activities_from_gc_since_last(api, since_date))
         since_date = since_date + timedelta(days=30)
