@@ -5,6 +5,7 @@ from garmin_models import UserCredentials
 from garminconnect import Garmin
 
 from datetime import date, timedelta
+import time
 import json
 import logging
 
@@ -28,6 +29,7 @@ def _retry_garmin_call_on_failure(gc_call, *args):
             if (retries + 1) < MAX_GARMIN_CONNECT_API_RETRIES:
                 logger.error(f"Error occurred when calling {gc_call} - Try {retries} - Retrying..")
                 retries += 1
+                time.sleep(0.5)
             else:
                 raise e
 
