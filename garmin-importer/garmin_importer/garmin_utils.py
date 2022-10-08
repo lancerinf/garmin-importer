@@ -89,8 +89,8 @@ def _persist_activity(api: Garmin, username: str, activity: dict):
 
     # persist them to s3
     logger.debug(f"Persisting zip, gpx for activity: {activity.get('beginTimestamp')}")
-    zip_upload_success = persist_in_s3(f'{activity.get("beginTimestamp")}/{activity.get("activityId")}.zip', zip_buffer)
-    gpx_upload_success = persist_in_s3(f'{activity.get("beginTimestamp")}/{activity.get("activityId")}.gpx', gpx_buffer)
+    zip_upload_success = persist_in_s3(f'{username}/{activity.get("beginTimestamp")}/{activity.get("activityId")}.zip', zip_buffer)
+    gpx_upload_success = persist_in_s3(f'{username}/{activity.get("beginTimestamp")}/{activity.get("activityId")}.gpx', gpx_buffer)
 
     # write activity details to dynamo
     if zip_upload_success and gpx_upload_success:
