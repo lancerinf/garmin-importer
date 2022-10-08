@@ -38,7 +38,7 @@ def lambda_handler(event, context):
         save_garmin_session(credentials, garmin)
 
     except GarminConnectSessionException as e:
-        logger.critical(e, exc_info=True)
+        logger.critical(e)
 
     except Exception as e:
         logger.critical(e, exc_info=True)

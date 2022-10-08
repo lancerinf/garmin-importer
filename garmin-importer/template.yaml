@@ -7,8 +7,8 @@ Description: >
 
 Globals:
   Function:
-    Timeout: 180
-    MemorySize: 256
+    Timeout: 120
+    MemorySize: 128
 
 Resources:
   GarminImporterFunction:
@@ -33,7 +33,7 @@ Resources:
         GarminImporter:
           Type: Schedule
           Properties:
-            Schedule: rate(8 hours)
+            Schedule: rate(12 hours)
             Name: garmin-importer-schedule
             Description: Schedule by which the garmin-importer runs
             Enabled: True
