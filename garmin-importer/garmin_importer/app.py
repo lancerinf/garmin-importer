@@ -12,7 +12,6 @@ logger.setLevel(logging.INFO)
 
 
 def lambda_handler(event, context):
-    output = {}
     garmin: Garmin
 
     try:
@@ -22,16 +21,17 @@ def lambda_handler(event, context):
 
         logging.info('Checking last activity persisted..')
         last_stored_activity = get_date_of_latest_activity(credentials.username)
-        output['last_activity'] = str(last_stored_activity)
 
-        logging.info(f'Looking for new activities since: {str(last_stored_activity)}')
+        logger.info(f'Searching from date of last stored activity: {str(last_stored_activity)}')
         new_activities = check_for_new_activities(garmin, last_stored_activity)
 
         logging.info(f'Found {len(new_activities)} activities since last. Processing..')
         persisted_activities = persist_new_activities(garmin, credentials, new_activities)
+        persisted_activities.sort()
         if persisted_activities:
             logging.info(f'Persisted {len(persisted_activities)} new activities.')
-            output['persisted_activities'] = str(persisted_activities)
+            logging.info(f'{str(persisted_activities)}')
+            logging.info(f'New last stored activity: {persisted_activities[-1]}')
         else:
             logging.info('No new activity found.')
 
@@ -43,5 +43,3 @@ def lambda_handler(event, context):
     except Exception as e:
         logger.critical(e, exc_info=True)
         save_garmin_session(credentials, garmin)
-
-    return output
