@@ -6,7 +6,7 @@ class GarminConnectSessionException(BaseException):
     pass
 
 
-class GarminImportFailure(Exception):
+class GarminImporterFailure(Exception):
     pass
 
 
