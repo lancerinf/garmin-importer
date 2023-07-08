@@ -1,3 +1,4 @@
+SHELL = /bin/bash -ex
 .RECIPEPREFIX := $(.RECIPEPREFIX)
 
 build:
@@ -5,3 +6,6 @@ build:
 
 local-invoke:
 	sam local invoke GarminImporterFunction --template garmin-importer/.aws-sam/build/template.yaml
+
+deploy:
+	sam deploy --guided --template-file garmin-importer/.aws-sam/build/template.yaml
