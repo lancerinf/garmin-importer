@@ -1,4 +1,4 @@
-from failure_modes import InvalidActivity, GarminConnectSessionException
+from failure_modes import InvalidActivity, GarminConnectRetrieveActivitiesException, GarminConnectSessionException
 from aws_utils import activity_already_persisted, persist_in_s3, insert_activity_in_dynamo, save_session_in_secret_store
 from garmin_models import UserCredentials
 
@@ -8,7 +8,7 @@ from datetime import date, timedelta
 import json
 import logging
 
-MAX_GARMIN_CONNECT_API_RETRIES = 1
+MAX_GARMIN_CONNECT_API_RETRIES = 3
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ def _retry_garmin_call_on_failure(gc_call, *args):
     while retries < MAX_GARMIN_CONNECT_API_RETRIES:
         try:
             if args:
-                results = gc_call(args)
+                results = gc_call(*args)
             else:
                 results = gc_call()
             break
@@ -105,7 +105,13 @@ def _retrieve_activities_from_gc_since_last(api: Garmin, last_activity_date: dat
     if date.today() < month_after_last:
         month_after_last = date.today()
 
-    return api.get_activities_by_date(last_activity_date, month_after_last)
+    activities = []
+    try:
+        activities = _retry_garmin_call_on_failure(api.get_activities_by_date, last_activity_date, month_after_last)
+    except Exception as e:
+        raise GarminConnectRetrieveActivitiesException('Trouble establishing/renewing a valid session with Garmin Connect.') from e
+
+    return activities
 
 
 def _clean_activities_through_model(activities: list) -> list:

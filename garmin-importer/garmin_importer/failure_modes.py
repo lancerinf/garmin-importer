@@ -6,6 +6,10 @@ class GarminConnectSessionException(BaseException):
     pass
 
 
+class GarminConnectRetrieveActivitiesException(BaseException):
+    pass
+
+
 class GarminImporterFailure(Exception):
     pass
 
