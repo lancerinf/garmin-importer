@@ -116,9 +116,11 @@ def _clean_activities_through_model(activities: list) -> list:
 
 
 def _clean_activity(activity: dict) -> dict:
+    logger.debug(activity)
     cleaned_activity = {}
     for k, v in activity.items():
         if k in activity_model and v is not None:
+            logger.debug(k)
             if isinstance(v, dict):
                 for kk, vv in v.items():
                     if kk in activity_model.get(k):
@@ -137,6 +139,7 @@ def _valid_activity(activity: dict) -> bool:
 activity_model: dict[str] = {
     "beginTimestamp": None,
     "activityId": None,
+    "activityName": None,
     "startTimeLocal": None,
     "activityType": {
         "typeId": None,
@@ -167,7 +170,11 @@ activity_model: dict[str] = {
     "maxSwimCadenceInStrokesPerMinute": None,
     "steps": None,
     "poolLength": None,
-    "unitOfPoolLength": None,
+    "unitOfPoolLength": {
+        "unitId": None,
+        "unitKey": None,
+        "factor": None
+    },
     "timeZoneId": None,
     "sportTypeId": None,
     "avgPower": None,
