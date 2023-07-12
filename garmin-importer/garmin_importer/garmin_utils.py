@@ -8,25 +8,25 @@ from datetime import date, timedelta
 import json
 import logging
 
-MAX_GARMIN_CONNECT_API_RETRIES = 3
+MAX_GARMIN_CONNECT_API_RETRIES = 1
 
 logger = logging.getLogger(__name__)
 
 
-def _retry_garmin_call_on_failure(gc_call, *args):
+def _retry_api_on_failure(api_call, *args, max_retries=MAX_GARMIN_CONNECT_API_RETRIES):
     retries = 0
 
-    while retries < MAX_GARMIN_CONNECT_API_RETRIES:
+    while retries < max_retries:
         try:
             if args:
-                results = gc_call(*args)
+                results = api_call(*args)
             else:
-                results = gc_call()
+                results = api_call()
             break
 
         except Exception as e:
-            if (retries + 1) < MAX_GARMIN_CONNECT_API_RETRIES:
-                logger.error(f"Error occurred when calling {gc_call} - Try {retries} - Retrying..")
+            if (retries + 1) < max_retries:
+                logger.error(f"Error occurred when calling {api_call.__name__} - Try {retries} - Retrying..")
                 retries += 1
             else:
                 raise e
@@ -42,7 +42,7 @@ def get_garmin_session(credentials: UserCredentials) -> Garmin:
         api = Garmin(credentials.username, credentials.password)
 
     try:
-        _retry_garmin_call_on_failure(api.login)
+        _retry_api_on_failure(api.login)
     except Exception as e:
         raise GarminConnectSessionException('Trouble establishing/renewing a valid session with Garmin Connect.') from e
 
@@ -107,7 +107,7 @@ def _retrieve_activities_from_gc_since_last(api: Garmin, last_activity_date: dat
 
     activities = []
     try:
-        activities = _retry_garmin_call_on_failure(api.get_activities_by_date, last_activity_date, month_after_last)
+        activities = _retry_api_on_failure(api.get_activities_by_date, last_activity_date, month_after_last, max_retries=3)
     except Exception as e:
         raise GarminConnectRetrieveActivitiesException('Trouble establishing/renewing a valid session with Garmin Connect.') from e
 
