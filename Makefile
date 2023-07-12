@@ -1,6 +1,9 @@
 SHELL = /bin/bash -ex
 .RECIPEPREFIX := $(.RECIPEPREFIX)
 
+test:
+	./garmin-importer/scripts/run_tests.sh
+
 build:
 	sam build GarminImporterFunction --template garmin-importer/template.yaml --build-dir garmin-importer/.aws-sam/build --use-container
 
