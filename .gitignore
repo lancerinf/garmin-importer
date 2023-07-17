@@ -130,3 +130,6 @@ dmypy.json
 
 # aws-sam
 garmin-importer/.aws-sam
+
+# conveniency script that includes username
+garmin-importer/scripts/fetch_latest_activity.py
