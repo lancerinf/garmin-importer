@@ -8,12 +8,12 @@ Globals:
     MemorySize: 128
 
 Resources:
-  GarminImporterFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+  GarminImporterFunctionZip:
+    Type: AWS::Serverless::Function
     Properties:
-      PackageType: Image
-      Architectures:
-        - x86_64
+      CodeUri: garmin_importer/
+      Handler: app.lambda_handler
+      Runtime: python3.11
       Policies:
         - Statement:
             - Sid: SMSecretRUPolicy
@@ -33,9 +33,6 @@ Resources:
             Name: garmin-importer-schedule
             Description: Schedule by which the garmin-importer runs
             Enabled: True
-    Metadata:
-      Dockerfile: Dockerfile
-      DockerContext: ./garmin_importer
 
   GarminCredentials:
     Type: AWS::SecretsManager::Secret
