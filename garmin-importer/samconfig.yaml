@@ -1,0 +1,13 @@
+version: 0.1
+
+default:
+  global:
+    parameters:
+      stack_name: "garmin-importer"
+      capabilities: [
+        "CAPABILITY_IAM",
+        "CAPABILITY_NAMED_IAM",
+        "CAPABILITY_AUTO_EXPAND"
+      ]
+      s3_bucket: "garmin-importer-sam-deployment"
+      image_repository: "271223117946.dkr.ecr.eu-west-1.amazonaws.com/garmin-importer"

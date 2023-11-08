@@ -7,4 +7,9 @@ The importer runs as a single AWS Lambda that is responsible for regularly check
 , and when new activities are found, saving a cleaned up activity summary in DynamoDB, and the activity GPX and FIT
 files on S3.
 
+
+## Development
+
+Use the facilities in the Makefile to test, build, local-invoke and deploy the function, from the repository root.
+
 [dashed]: https://github.com/lancerinf/dashed

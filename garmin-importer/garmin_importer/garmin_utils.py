@@ -1,5 +1,5 @@
 from failure_modes import InvalidActivity, GarminConnectRetrieveActivitiesException, GarminConnectSessionException
-from aws_utils import activity_already_persisted, persist_in_s3, insert_activity_in_dynamo, save_session_in_secret_store
+from aws_utils import activity_already_persisted, persist_in_s3, insert_activity_in_dynamo
 from garmin_models import UserCredentials
 
 from garminconnect import Garmin
@@ -35,11 +35,7 @@ def _retry_api_on_failure(api_call, *args, max_retries=MAX_GARMIN_CONNECT_API_RE
 
 
 def get_garmin_session(credentials: UserCredentials) -> Garmin:
-    api: Garmin
-    if credentials.session:
-        api = Garmin(credentials.username, credentials.password, session_data=credentials.session)
-    else:
-        api = Garmin(credentials.username, credentials.password)
+    api: Garmin = Garmin(credentials.username, credentials.password)
 
     try:
         _retry_api_on_failure(api.login)
@@ -47,13 +43,6 @@ def get_garmin_session(credentials: UserCredentials) -> Garmin:
         raise GarminConnectSessionException('Trouble establishing/renewing a valid session with Garmin Connect.') from e
 
     return api
-
-
-def save_garmin_session(credentials: UserCredentials, api: Garmin):
-    session_to_save = api.session_data
-    text_to_save = json.dumps(session_to_save)
-
-    save_session_in_secret_store(credentials, text_to_save)
 
 
 def check_for_new_activities(api: Garmin, since_date: date) -> list:
