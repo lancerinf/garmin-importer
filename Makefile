@@ -5,10 +5,10 @@ test:
 	./garmin-importer/scripts/run_tests.sh
 
 build:
-	sam build GarminImporterFunction --template garmin-importer/template.yaml --build-dir garmin-importer/.aws-sam/build --use-container
-
-local-invoke:
-	sam local invoke GarminImporterFunction --template garmin-importer/.aws-sam/build/template.yaml
+	 sam build GarminImporterFunction --config-file samconfig.yaml --template garmin-importer/template.yaml --build-dir garmin-importer/.aws-sam/build --use-container
 
 deploy:
-	sam deploy --guided --template-file garmin-importer/.aws-sam/build/template.yaml
+	sam deploy --template garmin-importer/.aws-sam/build/template.yaml --config-file ../../samconfig.yaml
+
+local-invoke:
+	sam local invoke GarminImporterFunction --config-file ../../samconfig.yaml --template garmin-importer/.aws-sam/build/template.yaml

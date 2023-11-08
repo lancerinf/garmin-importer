@@ -1,9 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
-  python3.10
-
-  Sample SAM Template for garmin-importer
+Description: SAM application for garmin-importer
 
 Globals:
   Function:
@@ -22,7 +19,6 @@ Resources:
             - Sid: SMSecretRUPolicy
               Effect: Allow
               Action:
-              - secretsmanager:UpdateSecret
               - secretsmanager:GetSecretValue
               Resource: !Ref GarminCredentials
         - DynamoDBCrudPolicy:
@@ -40,7 +36,6 @@ Resources:
     Metadata:
       Dockerfile: Dockerfile
       DockerContext: ./garmin_importer
-      DockerTag: python3.10-v1
 
   GarminCredentials:
     Type: AWS::SecretsManager::Secret

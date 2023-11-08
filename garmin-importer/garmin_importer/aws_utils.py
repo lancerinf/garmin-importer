@@ -25,24 +25,8 @@ def retrieve_garmin_credentials() -> UserCredentials:
     except Exception as e:
         raise CredentialsRetrievalFailure("Something went bad during credentials retrieval") from e
 
-    if session := secret_string.get('session'):
-        return UserCredentials(username=secret_string.get('username'),
-                               password=secret_string.get('password'),
-                               session=json.loads(session))
-
     return UserCredentials(username=secret_string.get('username'),
                            password=secret_string.get('password'))
-
-
-def save_session_in_secret_store(credentials: UserCredentials, session: str):
-    """Stores Garmin session for future use"""
-    sm_client: SMClient = boto3.client('secretsmanager')
-    updated_secret = {
-        'username': credentials.username,
-        'password': credentials.password,
-        'session': session
-    }
-    sm_client.update_secret(SecretId=GARMIN_CREDENTIALS_NAME, SecretString=json.dumps(updated_secret))
 
 
 def get_date_of_latest_activity(username: str) -> date:
