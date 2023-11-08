@@ -12,7 +12,7 @@ build:
 	 sam build GarminImporterFunctionZip
 
 deploy:
-	sam deploy
+	sam sync --no-dependency-layer
 
 local-invoke:
 	sam local invoke GarminImporterFunctionZip
