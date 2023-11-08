@@ -8,12 +8,12 @@ Globals:
     MemorySize: 128
 
 Resources:
-  GarminImporterFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+  GarminImporterFunctionZip:
+    Type: AWS::Serverless::Function
     Properties:
-      PackageType: Image
-      Architectures:
-        - x86_64
+      CodeUri: garmin_importer/
+      Handler: app.lambda_handler
+      Runtime: python3.11
       Policies:
         - Statement:
             - Sid: SMSecretRUPolicy
@@ -26,16 +26,13 @@ Resources:
         - S3WritePolicy:
             BucketName: !Ref GarminActivitiesBucket
       Events:
-        GarminImporter:
+        GarminImporterSchedule:
           Type: Schedule
           Properties:
             Schedule: rate(12 hours)
-            Name: garmin-importer-schedule
-            Description: Schedule by which the garmin-importer runs
+            Name: garmin-importer
+            Description: Schedule with which the garmin-importer runs
             Enabled: True
-    Metadata:
-      Dockerfile: Dockerfile
-      DockerContext: ./garmin_importer
 
   GarminCredentials:
     Type: AWS::SecretsManager::Secret
@@ -67,11 +64,3 @@ Resources:
         BlockPublicPolicy: TRUE
         IgnorePublicAcls: TRUE
         RestrictPublicBuckets: TRUE
-
-Outputs:
-  GarminImporterFunction:
-    Description: "Garmin Importer Lambda Function ARN"
-    Value: !GetAtt GarminImporterFunction.Arn
-  GarminImporterFunctionIamRole:
-    Description: "Implicit IAM Role created for Garmin Importer function"
-    Value: !GetAtt GarminImporterFunctionRole.Arn
