@@ -1,5 +1,5 @@
 #!/bin/bash
 
-pushd garmin-importer/tests
+pushd tests
 python -m unittest -v
 popd
