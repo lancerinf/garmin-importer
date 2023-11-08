@@ -9,10 +9,10 @@ fetch-latest:
 	python ./scripts/fetch_latest_activity.py
 
 build:
-	 sam build GarminImporterFunction
+	 sam build GarminImporterFunctionZip
 
 deploy:
 	sam deploy
 
 local-invoke:
-	sam local invoke GarminImporterFunction
+	sam local invoke GarminImporterFunctionZip

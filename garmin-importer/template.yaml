@@ -26,12 +26,12 @@ Resources:
         - S3WritePolicy:
             BucketName: !Ref GarminActivitiesBucket
       Events:
-        GarminImporter:
+        GarminImporterSchedule:
           Type: Schedule
           Properties:
             Schedule: rate(12 hours)
-            Name: garmin-importer-schedule
-            Description: Schedule by which the garmin-importer runs
+            Name: garmin-importer
+            Description: Schedule with which the garmin-importer runs
             Enabled: True
 
   GarminCredentials:
@@ -64,11 +64,3 @@ Resources:
         BlockPublicPolicy: TRUE
         IgnorePublicAcls: TRUE
         RestrictPublicBuckets: TRUE
-
-Outputs:
-  GarminImporterFunction:
-    Description: "Garmin Importer Lambda Function ARN"
-    Value: !GetAtt GarminImporterFunction.Arn
-  GarminImporterFunctionIamRole:
-    Description: "Implicit IAM Role created for Garmin Importer function"
-    Value: !GetAtt GarminImporterFunctionRole.Arn
