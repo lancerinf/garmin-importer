@@ -3,10 +3,10 @@ version: 0.1
 default:
   global:
     parameters:
-      stack_name: "garmin-importer"
+      stack_name: "garmin_importer"
       capabilities: [
         "CAPABILITY_IAM",
         "CAPABILITY_NAMED_IAM",
         "CAPABILITY_AUTO_EXPAND"
       ]
-      s3_bucket: "garmin-importer-sam-deployment"
+      s3_bucket: "garmin_importer-sam-deployment"

@@ -42,7 +42,7 @@ The first command will build a docker image from a Dockerfile and then copy the 
 Build your application with the `sam build` command.
 
 ```bash
-garmin-importer$ sam build
+garmin_importer$ sam build
 ```
 
 The SAM CLI builds a docker image from a Dockerfile and then installs dependencies defined in `hello_world/requirements.txt` inside the docker image. The processed template file is saved in the `.aws-sam/build` folder.
@@ -52,7 +52,7 @@ Test a single function by invoking it directly with a test event. An event is a 
 Run functions locally and invoke them with the `sam local invoke` command.
 
 ```bash
-garmin-importer$ sam local invoke GarminImporterFunction
+garmin_importer$ sam local invoke GarminImporterFunction
 ```
 
 
@@ -63,7 +63,7 @@ To simplify troubleshooting, SAM CLI has a command called `sam logs`. `sam logs`
 `NOTE`: This command works for all AWS Lambda functions; not just the ones you deploy using SAM.
 
 ```bash
-garmin-importer$ sam logs -n GarminImporterFunction --stack-name garmin-importer --tail
+garmin_importer$ sam logs -n GarminImporterFunction --stack-name garmin_importer --tail
 ```
 
 You can find more information and examples about filtering Lambda function logs in the [SAM CLI Documentation](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-logging.html).

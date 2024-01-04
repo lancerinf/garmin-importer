@@ -1,11 +1,10 @@
 from failure_modes import InvalidActivity, GarminConnectRetrieveActivitiesException, GarminConnectSessionException
 from aws_utils import activity_already_persisted, persist_in_s3, insert_activity_in_dynamo
-from garmin_models import UserCredentials
+from garmin_models import UserCredentials, GarminActivityModel
 
 from garminconnect import Garmin
 
 from datetime import date, timedelta
-import json
 import logging
 
 MAX_GARMIN_CONNECT_API_RETRIES = 1
@@ -114,11 +113,11 @@ def _clean_activity(activity: dict) -> dict:
     logger.debug(activity)
     cleaned_activity = {}
     for k, v in activity.items():
-        if k in activity_model and v is not None:
+        if k in GarminActivityModel and v is not None:
             logger.debug(k)
             if isinstance(v, dict):
                 for kk, vv in v.items():
-                    if kk in activity_model.get(k):
+                    if kk in GarminActivityModel.get(k):
                         cleaned_activity[f"{k}{kk.capitalize()}"] = vv
             elif isinstance(v, list):
                 pass
@@ -129,105 +128,3 @@ def _clean_activity(activity: dict) -> dict:
 
 def _valid_activity(activity: dict) -> bool:
     return bool(activity.get("beginTimestamp")) and bool(activity.get('activityId'))
-
-
-activity_model: dict[str] = {
-    "beginTimestamp": None,
-    "activityId": None,
-    "activityName": None,
-    "startTimeLocal": None,
-    "activityType": {
-        "typeId": None,
-        "typeKey": None,
-        "parentTypeId": None
-    },
-    "startTimeGMT": None,
-    "distance": None,
-    "duration": None,
-    "elapsedDuration": None,
-    "movingDuration": None,
-    "elevationGain": None,
-    "elevationLoss": None,
-    "averageSpeed": None,
-    "maxSpeed": None,
-    "startLatitude": None,
-    "startLongitude": None,
-    "ownerId": None,
-    "ownerFullName": None,
-    "calories": None,
-    "averageHR": None,
-    "maxHR": None,
-    "averageRunningCadenceInStepsPerMinute": None,
-    "maxRunningCadenceInStepsPerMinute": None,
-    "averageBikingCadenceInRevPerMinute": None,
-    "maxBikingCadenceInRevPerMinute": None,
-    "averageSwimCadenceInStrokesPerMinute": None,
-    "maxSwimCadenceInStrokesPerMinute": None,
-    "steps": None,
-    "poolLength": None,
-    "unitOfPoolLength": {
-        "unitId": None,
-        "unitKey": None,
-        "factor": None
-    },
-    "timeZoneId": None,
-    "sportTypeId": None,
-    "avgPower": None,
-    "maxPower": None,
-    "aerobicTrainingEffect": None,
-    "anaerobicTrainingEffect": None,
-    "strokes": None,
-    "normPower": None,
-    "leftBalance": None,
-    "rightBalance": None,
-    "avgLeftBalance": None,
-    "max20MinPower": None,
-    "avgVerticalOscillation": None,
-    "avgGroundContactTime": None,
-    "avgStrideLength": None,
-    "avgFractionalCadence": None,
-    "maxFractionalCadence": None,
-    "trainingStressScore": None,
-    "intensityFactor": None,
-    "vO2MaxValue": None,
-    "avgVerticalRatio": None,
-    "avgGroundContactBalance": None,
-    "lactateThresholdBpm": None,
-    "lactateThresholdSpeed": None,
-    "maxFtp": None,
-    "avgStrokeDistance": None,
-    "avgStrokeCadence": None,
-    "maxStrokeCadence": None,
-    "workoutId": None,
-    "avgStrokes": None,
-    "minStrokes": None,
-    "deviceId": None,
-    "minTemperature": None,
-    "maxTemperature": None,
-    "minElevation": None,
-    "maxElevation": None,
-    "avgVerticalSpeed": None,
-    "maxVerticalSpeed": None,
-    "floorsClimbed": None,
-    "floorsDescended": None,
-    "locationName": None,
-    "lapCount": None,
-    "endLatitude": None,
-    "endLongitude": None,
-    "maxAvgPower_1": None,
-    "maxAvgPower_2": None,
-    "maxAvgPower_5": None,
-    "maxAvgPower_10": None,
-    "maxAvgPower_20": None,
-    "maxAvgPower_30": None,
-    "maxAvgPower_60": None,
-    "maxAvgPower_120": None,
-    "maxAvgPower_300": None,
-    "maxAvgPower_600": None,
-    "maxAvgPower_1200": None,
-    "maxAvgPower_1800": None,
-    "maxAvgPower_3600": None,
-    "maxAvgPower_7200": None,
-    "maxAvgPower_18000": None,
-    "minActivityLapDuration": None
-}

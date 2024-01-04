@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: SAM application for garmin-importer
+Description: SAM application for garmin_importer
 
 Globals:
   Function:
@@ -30,14 +30,14 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: rate(12 hours)
-            Name: garmin-importer
-            Description: Schedule with which the garmin-importer runs
+            Name: garmin_importer
+            Description: Schedule with which the garmin_importer runs
             Enabled: True
 
   GarminCredentials:
     Type: AWS::SecretsManager::Secret
     Properties:
-        Name: garmin-importer/garmin-credentials
+        Name: garmin_importer/garmin-credentials
 
   GarminActivitiesTable:
     Type: AWS::DynamoDB::Table

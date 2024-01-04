@@ -8,9 +8,9 @@ from boto3_type_annotations.dynamodb import Client as DDBClient
 from boto3_type_annotations.s3 import Client as S3Client
 from boto3_type_annotations.secretsmanager import Client as SMClient
 
-GARMIN_CREDENTIALS_NAME = 'garmin-importer/garmin-credentials'
+GARMIN_CREDENTIALS_NAME = 'garmin_importer/garmin-credentials'
 GARMIN_ACTIVITIES_TABLE = 'garmin-activities-table'
-GARMIN_ACTIVITIES_BUCKET = 'garmin-importer-activities'
+GARMIN_ACTIVITIES_BUCKET = 'garmin_importer-activities'
 
 
 def retrieve_garmin_credentials() -> UserCredentials:

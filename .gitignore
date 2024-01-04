@@ -129,4 +129,4 @@ dmypy.json
 .pyre/
 
 # aws-sam
-garmin-importer/.aws-sam
+garmin_importer/.aws-sam
